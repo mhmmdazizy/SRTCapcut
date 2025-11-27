@@ -1,5 +1,5 @@
 # ================================
-# SRTCapcut Installer
+# SRTCapcut Installer (Stable Version)
 # ================================
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -13,7 +13,7 @@ $ZipUrl = "https://drive.google.com/uc?export=download&id=1cDYsfAGVXmymg4d94QsWK
 $ZipPath = Join-Path $env:TEMP "srtcapcut_download.zip"
 
 # -----------------------------------
-# Helper Output Functions
+# Helper Functions
 # -----------------------------------
 function Write-Success { Write-Host " > OK" -ForegroundColor Green }
 function Write-Unsuccess { Write-Host " > ERROR" -ForegroundColor Red }
@@ -39,11 +39,13 @@ function Check-PreviousInstall {
     if (Test-Path $exe) {
         Write-Host "`nSRTCapcut sudah terinstal di:"
         Write-Host $TargetFolder -ForegroundColor Cyan
+
         $choices = @(
             (New-Object System.Management.Automation.Host.ChoiceDescription "&Reinstall", "Install ulang (overwrite)."),
             (New-Object System.Management.Automation.Host.ChoiceDescription "&Cancel", "Batalkan.")
         )
         $choice = $Host.UI.PromptForChoice("", "Apa yang ingin kamu lakukan?", $choices, 1)
+
         if ($choice -eq 1) {
             Write-Host "Installation aborted." -ForegroundColor Yellow
             exit
@@ -53,24 +55,29 @@ function Check-PreviousInstall {
 }
 
 # -----------------------------------
-# Download ZIP with Progress
+# Download ZIP with manual progress bar
 # -----------------------------------
 function Download-ZipFile {
     Write-Host "Downloading SRTCapcut package..."
 
-    $wc = New-Object System.Net.WebClient
+    $response = Invoke-WebRequest -Uri $ZipUrl -Method GET -OutFile $ZipPath -PassThru
 
-    $wc.DownloadProgressChanged += {
-        Write-Progress -Activity "Downloading..." -Status "$($_.ProgressPercentage)% completed" -PercentComplete $_.ProgressPercentage
+    $total = $response.RawContentLength
+    $got = 0
+
+    Write-Progress -Activity "Preparing..." -Status "Starting" -PercentComplete 0
+
+    $stream = [System.IO.File]::OpenRead($ZipPath)
+    $buffer = New-Object byte[] (1MB)
+
+    while (($read = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+        $got += $read
+        $percent = [math]::Round(($got / $total) * 100)
+        Write-Progress -Activity "Downloading..." -Status "$percent% completed" -PercentComplete $percent
     }
 
-    $wc.DownloadFileCompleted += {
-        Write-Host "`nDownload completed." -ForegroundColor Green
-    }
-
-    $wc.DownloadFileAsync($ZipUrl, $ZipPath)
-
-    while ($wc.IsBusy) { Start-Sleep -Milliseconds 100 }
+    $stream.Close()
+    Write-Host "`nDownload completed." -ForegroundColor Green
 }
 
 # -----------------------------------
@@ -97,7 +104,7 @@ function Run-App {
 }
 
 # -----------------------------------
-# MAIN INSTALL PROCESS
+# MAIN
 # -----------------------------------
 Write-Host "`n=== SRTCapcut Installer ===" -ForegroundColor Cyan
 
