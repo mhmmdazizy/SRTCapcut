@@ -11,7 +11,7 @@ $InstallPath = Join-Path $Desktop $FolderName
 
 $DownloadURL = "https://drive.google.com/uc?export=download&id=1cDYsfAGVXmymg4d94QsWKVhDze5BEZ7w"
 $TempRAR = "$env:TEMP\SRTCapcut.rar"
-$ExeName = "SRTCapcutV1.0.exe"
+$ExeName = "SRTCapcutV1.1.exe"
 
 
 # ============================================================
@@ -160,3 +160,4 @@ Cleanup-Temp
 Run-App
 
 Write-Host "`n$AppName installation complete!" -ForegroundColor Green
+
